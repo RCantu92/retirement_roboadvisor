@@ -1,7 +1,6 @@
 ### Required Libraries ###
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
-# from botocore.vendored import requests
 
 
 ### Functionality Helper Functions ###
@@ -44,16 +43,17 @@ def validate_data(age, investment_amount, intent_request):
                 "please provide a different age.",
             )
 
-    # Validate the investment amount, it should be > 0
+    # Validate the investment amount,
+    # it should be equal or greater than 5000
     if investment_amount is not None:
         investment_amount = parse_int(
             investment_amount
         )  # Since parameters are strings it's important to cast values
-        if investment_amount <= 0:
+        if investment_amount < 5000:
             return build_validation_result(
                 False,
                 "investmentAmount",
-                "The amount to invest should be greater than zero, "
+                "The amount to invest should be greater than 5000, "
                 "please provide a correct amount in USD to invest.",
             )
 
@@ -66,6 +66,7 @@ def get_slots(intent_request):
     """
     Fetch all the slots and their values from the current intent.
     """
+    
     return intent_request["currentIntent"]["slots"]
 
 
@@ -119,12 +120,19 @@ def recommend_portfolio(intent_request):
     """
     Performs dialog management and fulfillment for recommending a portfolio.
     """
+    
     # Gets slots' values
     first_name = get_slots(intent_request)["firstName"]
-    age = int(get_slots(intent_request)["age"])
+    age = get_slots(intent_request)["age"]
     investment_amount = get_slots(intent_request)["investmentAmount"]
     risk_level = get_slots(intent_request)["riskLevel"]
     source = intent_request["invocationSource"]
+    
+    if age: 
+        age = int(age)
+        
+    if risk_level:
+        risk_level = risk_level.lower()
 
     if source == "DialogCodeHook":
         # This code performs basic validation on the supplied input slots.
@@ -164,23 +172,20 @@ def recommend_portfolio(intent_request):
     # Get the initial investment recommendation
     
     ### YOUR FINAL INVESTMENT RECOMMENDATION CODE STARTS HERE ###
-    '''
-    # Define initial_recommendation variable
     
     if risk_level == 'very high':
-        return '0% bonds (AGG), 100% equities (SPY)'
+        initial_recommendation = '0% bonds (AGG), 100% equities (SPY)'
     elif risk_level == 'high':
-        return '20% bonds (AGG), 80% equities (SPY)'
+        initial_recommendation = '20% bonds (AGG), 80% equities (SPY)'
     elif risk_level == 'medium':
-        return '40% bonds (AGG), 60% equities (SPY)'
+        initial_recommendation = '40% bonds (AGG), 60% equities (SPY)'
     elif risk_level == 'low':
-        return '60% bonds (AGG), 40% equities (SPY)'
+        initial_recommendation = '60% bonds (AGG), 40% equities (SPY)'
     elif risk_level == 'very low':
-        return '80% bonds (AGG), 20% equities (SPY)'
-    else:
-        return '100% bonds (AGG), 0% equities (SPY)'
-    '''
-        
+        initial_recommendation = '80% bonds (AGG), 20% equities (SPY)'
+    elif risk_level == 'none':
+        initial_recommendation = '100% bonds (AGG), 0% equities (SPY)'
+    
     ### YOUR FINAL INVESTMENT RECOMMENDATION CODE ENDS HERE ###
 
     # Return a message with the initial recommendation based on the risk level.
@@ -192,7 +197,7 @@ def recommend_portfolio(intent_request):
             "content": """{} thank you for your information;
             based on the risk level you defined, my recommendation is to choose an investment portfolio with {}
             """.format(
-                first_name, investment_amount # change to: initial_recommendation
+                first_name, initial_recommendation
             ),
         },
     )
@@ -205,7 +210,7 @@ def dispatch(intent_request):
     """
 
     intent_name = intent_request["currentIntent"]["name"]
-
+    
     # Dispatch to bot's intent handlers
     if intent_name == "RecommendPortfolio":
         return recommend_portfolio(intent_request)
@@ -219,5 +224,5 @@ def lambda_handler(event, context):
     Route the incoming request based on intent.
     The JSON body of the request is provided in the event slot.
     """
-
+    
     return dispatch(event)
